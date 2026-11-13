@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Steam Manager</title>
+<style>
+:root{color-scheme:dark;--bg:#050506;--panel:rgba(12,12,14,.92);--card:rgba(18,18,21,.94);--line:#26262b;--text:#f2f2f3;--muted:#8a8a91;--accent:#ff6a13;--glow:rgba(255,106,19,.35);--ok:#22c55e;--bad:#ef4444;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;height:100%}
+body{color:var(--text);font:14px/1.4 "Segoe UI",system-ui,-apple-system,Arial,sans-serif;display:flex;flex-direction:column;
+background-color:var(--bg);
+background-image:radial-gradient(ellipse 70% 45% at 50% -8%,rgba(255,106,19,.16),transparent 70%),linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+background-size:100% 100%,32px 32px,32px 32px;background-attachment:fixed}
+.app{flex:1;display:flex;flex-direction:column;min-height:0}
+.app[hidden]{display:none}
+.top{display:flex;justify-content:center;gap:10px;padding:10px;border-bottom:1px solid var(--line);background:var(--panel)}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 14px;color:var(--muted);white-space:nowrap;box-shadow:0 0 14px rgba(255,106,19,.07)}
+.pill b{color:var(--text);margin-right:4px;text-shadow:0 0 10px var(--glow)}
+.layout{flex:1;display:flex;min-height:0}
+aside{width:215px;background:var(--panel);border-right:1px solid var(--line);padding:14px 10px;flex-shrink:0;overflow-y:auto}
+.logo{display:flex;align-items:center;gap:10px;padding:4px 8px 16px;border-bottom:1px solid var(--line);margin-bottom:12px;font-weight:700;font-size:15px}
+.logo span{color:var(--accent);text-shadow:0 0 12px var(--glow)}
+.sec{font-size:10px;letter-spacing:.08em;color:var(--muted);margin:14px 6px 6px;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;color:var(--muted);margin-bottom:2px}
+.nav.on{background:#2a1708;color:var(--accent);border:1px solid #5a3212;box-shadow:0 0 18px rgba(255,106,19,.25),inset 0 0 12px rgba(255,106,19,.08)}
+.nav .n{margin-left:auto;font-size:11px}
+.nav.soon{opacity:.5}
+main{flex:1;overflow:auto;min-width:0}
+.bar{display:flex;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:rgba(8,8,10,.6)}
+input,button{font:inherit}
+.search{flex:1;min-width:160px;background:#08080a;border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--text)}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;box-shadow:0 0 18px var(--glow)}
+.btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--text);box-shadow:none}
+.btn.ghost:hover{border-color:#5a3212;box-shadow:0 0 14px rgba(255,106,19,.2)}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.4;cursor:not-allowed;filter:none;box-shadow:none}
+.btn.sm{padding:6px 10px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,250px));gap:16px;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative;cursor:pointer;transition:box-shadow .2s,border-color .2s,transform .2s}
+.card:hover{border-color:#6a3a14;box-shadow:0 0 26px rgba(255,106,19,.28);transform:translateY(-2px)}
+.banner{height:78px;background:linear-gradient(135deg,#3a1d08,#16161a 60%,#0f1620)}
+.dot{position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.av{width:40px;height:40px;border-radius:50%;background:#1c1c20;border:2px solid #050506;margin:-20px 0 0 14px;display:grid;place-items:center;font-weight:700;color:var(--accent);position:relative;box-shadow:0 0 14px var(--glow);text-shadow:0 0 8px var(--glow)}
+.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.av img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
+.st{z-index:2}.st.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.stats .big.ok{color:var(--ok);text-shadow:0 0 12px rgba(34,197,94,.5)}
+.sess.ok{border-color:#14532d;color:var(--ok);box-shadow:0 0 14px rgba(34,197,94,.2)}
+.sess.bad{border-color:#5a1d1d;color:var(--bad)}
+.body{padding:8px 14px 14px}
+.name{font-weight:700;font-size:16px;word-break:break-all}
+.sid{font-size:10px;color:var(--muted);letter-spacing:.04em;min-height:14px}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+.tag{font-size:11px;padding:2px 8px;border-radius:8px;border:1px solid var(--line);background:#1b1b1e;color:var(--muted)}
+.tag.ok{border-color:#14532d;color:var(--ok);background:#0b1f12;box-shadow:0 0 10px rgba(34,197,94,.18)}
+.tag.no{border-color:#5a1d1d;color:var(--bad);background:#220e0e}
+.info{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;background:#0a0a0c}
+.info div{padding:8px 10px;min-width:0}
+.info div+div{border-left:1px solid var(--line)}
+.lbl{font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.val{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.del{margin-top:10px;width:100%;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px;cursor:pointer}
+.del:hover{color:var(--bad);border-color:#5a1d1d}
+.empty{padding:60px 20px;text-align:center;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal.show{display:flex}
+.box{background:#0e0e10;border:1px solid var(--line);border-radius:16px;padding:20px;width:100%;max-width:440px;max-height:100%;overflow:auto;box-shadow:0 0 40px rgba(255,106,19,.15)}
+.box h2{margin:0 0 14px;font-size:18px}
+label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
+.in{width:100%;background:#08080a;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text)}
+.in:focus,.search:focus{outline:1px solid var(--accent);box-shadow:0 0 12px var(--glow)}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
+.file{display:flex;align-items:center;gap:10px}
+.file span{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file span.ok{color:var(--ok)}
+.err{color:var(--bad);font-size:12px;margin-top:10px;min-height:16px}
+.acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.toast{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:#0b1f12;border:1px solid #14532d;border-radius:12px;padding:10px 16px;display:none;z-index:30;box-shadow:0 0 20px rgba(34,197,94,.25)}
+.toast.show{display:block}
+/* detail view */
+.hdr{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.hid{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.hid .av{margin:0;width:34px;height:34px}
+.hid b{display:block}.hid small{color:var(--muted);font-size:11px}
+.det{flex:1;overflow:auto;display:grid;grid-template-columns:300px 1fr;gap:18px;padding:18px;align-content:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.pnl{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 0 22px rgba(255,106,19,.06)}
+.prof{text-align:left}
+.av.big{width:84px;height:84px;margin:0 0 10px;font-size:34px;border-width:3px}
+.st{position:absolute;right:2px;bottom:4px;width:14px;height:14px;border-radius:50%;background:var(--muted);border:2px solid #050506}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stats .big{font-size:22px;font-weight:700;color:var(--muted)}
+.guard .code{font:700 34px/1 Consolas,"Courier New",monospace;letter-spacing:.14em;color:var(--accent);text-shadow:0 0 16px var(--glow),0 0 32px rgba(255,106,19,.25)}
+.guard .crow{display:flex;align-items:center;justify-content:space-between;margin:10px 0}
+.pb{height:5px;background:#26262b;border-radius:5px;overflow:hidden}
+.pb i{display:block;height:100%;width:100%;background:var(--accent);box-shadow:0 0 12px var(--accent);transition:width 1s linear}
+.left{text-align:center;font-size:11px;color:var(--muted);margin-top:8px}
+.sess{border:1px solid #3a3a40;border-radius:10px;padding:10px 12px;color:var(--muted);margin-top:10px}
+.crd{display:flex;align-items:center;gap:12px;padding:10px 0}
+.crd+.crd{border-top:1px solid var(--line)}
+.crd .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:#0f1a2c;color:#5aa2ff;flex-shrink:0}
+.crd .t{flex:1;min-width:0}
+.mono{font-family:Consolas,"Courier New",monospace;word-break:break-all}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 8px;text-align:center;color:var(--muted);cursor:not-allowed;position:relative}
+.tile .ti{font-size:20px;filter:grayscale(1);opacity:.6;display:block;margin-bottom:8px}
+.tile b{display:block;color:#9a9aa1;font-weight:600}
+.tile small{font-size:11px}
+.tile em{position:absolute;top:6px;right:8px;font-size:9px;font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#6a6a72}
+.pend{display:flex;align-items:center;gap:14px;opacity:.6}
+.pend .t{flex:1}
+.danger{display:flex;align-items:center;gap:14px;border-color:#4a1d1d;background:rgba(30,10,10,.7);box-shadow:0 0 24px rgba(239,68,68,.12)}
+.danger .t{flex:1}.danger b{color:var(--bad)}
+.dbtn{background:#2a1010;border:1px solid #6a2020;color:var(--bad);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600}
+.dbtn:hover{box-shadow:0 0 18px rgba(239,68,68,.35)}
+@media(max-width:820px){.det{grid-template-columns:1fr}.tiles{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){aside{display:none}.top{justify-content:flex-start;overflow-x:auto}.grid{grid-template-columns:1fr}.danger,.pend{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="app" id="appList">
+  <div class="top">
+    <div class="pill"><b id="sTotal">0</b>Всего</div>
+    <div class="pill"><b id="sProxy">0</b>С прокси</div>
+    <div class="pill"><b id="sMa">0</b>С maFile</div>
+  </div>
+  <div class="layout">
+    <aside>
+      <div class="logo">🦅 <div>Steam <span>Manager</span></div></div>
+      <div class="sec">Управление</div>
+      <div class="nav on">Аккаунты <span class="n" id="sNav">0</span></div>
+      <div class="nav soon">Инвентарь</div>
+      <div class="sec">Торговля</div>
+      <div class="nav soon">Trade Sender</div>
+      <div class="nav soon">Market</div>
+      <div class="sec">Система</div>
+      <div class="nav soon">Ban Checker</div>
+    </aside>
+    <main>
+      <div class="bar">
+        <input class="search" id="q" placeholder="Поиск по логину или SteamID">
+        <button class="btn" id="add">+ Добавить аккаунт</button>
+      </div>
+      <div class="grid" id="grid"></div>
+    </main>
+  </div>
+</div>
+
+<div class="app" id="appAcc" hidden>
+  <div class="hdr">
+    <button class="btn ghost" id="back" type="button">← Назад</button>
+    <div class="hid"><div class="av" id="hAv"></div><div><b id="hName"></b><small id="hLogin" class="mono"></small></div></div>
+    <button class="btn ghost" id="rf" type="button">⟳ Обновить</button>
+  </div>
+  <div class="det">
+    <div class="col">
+      <div class="pnl prof">
+        <div class="av big" id="pAv"><span class="st"></span></div>
+        <div class="name" id="pName"></div>
+        <div class="sid mono" id="pLogin"></div>
+        <div class="tags" id="pTags" style="margin-bottom:0"></div>
+      </div>
+      <div class="pnl">
+        <div class="stats">
+          <div><div class="lbl">Статус</div><div class="big" id="stStatus">—</div></div>
+          <div><div class="lbl">Уровень</div><div class="big" id="stLevel">—</div></div>
+        </div>
+        <div class="lbl" style="margin-top:14px">Баланс кошелька</div>
+        <div class="stats" style="margin-top:4px"><span class="big" id="stWallet" style="font-size:26px">—</span></div>
+      </div>
+      <div class="pnl guard">
+        <div class="lbl">Steam Guard</div>
+        <div class="crow"><div class="code" id="aCode">—</div><button class="btn ghost sm" id="aCopyCode" type="button">Копировать</button></div>
+        <div class="pb"><i id="aBar"></i></div>
+        <div class="left" id="aLeft"></div>
+      </div>
+      <div class="pnl">
+        <div class="lbl">Сессия</div>
+        <div class="sess" id="sess">Сессия не создана</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="lbl" style="margin-bottom:-8px">Данные для входа</div>
+      <div class="pnl" style="padding:6px 16px">
+        <div class="crd"><div class="ic">👤</div><div class="t"><div class="lbl">Логин</div><div class="mono" id="aLogin"></div></div><button class="btn ghost sm" id="aCopyLogin" type="button">Копировать</button></div>
+        <div class="crd"><div class="ic" style="background:#2a1212;color:#ff6b6b">🔒</div><div class="t"><div class="lbl">Пароль</div><div class="mono" id="aPass"></div></div><button class="btn ghost sm" id="aShow" type="button">Показать</button><button class="btn ghost sm" id="aCopyPass" type="button">Копировать</button></div>
+        <div class="crd"><div class="ic" style="background:#102a1a;color:#4ade80">🌐</div><div class="t"><div class="lbl">Прокси</div><div class="mono" id="aProxy"></div></div><button class="btn ghost sm" id="aCopyProxy" type="button">Копировать</button></div>
+      </div>
+      <div class="lbl" style="margin-bottom:-8px">Действия</div>
+      <div class="tiles" id="tiles"></div>
+      <div class="pnl pend">
+        <div class="t"><b>Подтверждения</b><div class="hint">Просмотр и одобрение мобильных подтверждений Steam для этого аккаунта.</div></div>
+        <button class="btn ghost sm" disabled type="button">Открыть</button>
+      </div>
+      <div class="pnl danger">
+        <div class="t"><b>Опасная зона</b><div class="hint">Действие необратимо. Аккаунт будет удалён из списка.</div></div>
+        <button class="dbtn" id="dDel" type="button">Удалить аккаунт</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <h2>Добавить аккаунт</h2>
+    <label for="fLogin">Логин</label>
+    <input class="in" id="fLogin" autocomplete="off">
+    <label for="fPass">Пароль</label>
+    <input class="in" id="fPass" type="password" autocomplete="new-password">
+    <label>maFile</label>
+    <div class="file">
+      <button class="btn ghost" id="pick" type="button">Выбрать файл</button>
+      <span id="maName">не выбран</span>
+    </div>
+    <input type="file" id="fFile" accept=".maFile,.json" hidden>
+    <label for="fProxy">Прокси (необязательно)</label>
+    <input class="in" id="fProxy" autocomplete="off" placeholder="host:port:user:pass">
+    <div class="hint">Форматы: host:port, host:port:user:pass, user:pass@host:port, можно с префиксом http://, socks5://</div>
+    <div class="err" id="err"></div>
+    <div class="acts">
+      <button class="btn ghost" id="cancel" type="button">Отмена</button>
+      <button class="btn" id="save" type="button">Сохранить</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+var KEY='steam_manager_accounts_v1';
+var accounts=[],maText=null,maInfo=null;
+var ALPHA='23456789BCDFGHJKMNPQRTVWXY',cur=null,timer=null,lastStep=-1,passShown=false,delT=null;
+function $(id){return document.getElementById(id)}
+function load(){try{var r=localStorage.getItem(KEY);return r?JSON.parse(r):[]}catch(e){return[]}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(accounts))}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function toast(t){var el=$('toast');el.textContent=t;el.classList.add('show');setTimeout(function(){el.classList.remove('show')},2200)}
+
+function parseProxy(s){
+  s=s.trim();if(!s)return{ok:true,value:null};
+  var scheme='http',m=s.match(/^(https?|socks[45]):\/\//i);
+  if(m){scheme=m[1].toLowerCase();s=s.slice(m[0].length)}
+  var user='',pass='',host,port,a,b,p;
+  if(s.indexOf('@')>-1){
+    a=s.split('@');if(a.length!==2)return{ok:false};
+    b=a[0].split(':');user=b[0]||'';pass=b[1]||'';
+    p=a[1].split(':');host=p[0];port=p[1];
+  }else{
+    p=s.split(':');
+    if(p.length===2){host=p[0];port=p[1]}
+    else if(p.length===4){host=p[0];port=p[1];user=p[2];pass=p[3]}
+    else return{ok:false};
+  }
+  var n=Number(port);
+  if(!host||!/^[\w.\-]+$/.test(host)||!(n>=1&&n<=65535))return{ok:false};
+  return{ok:true,value:{scheme:scheme,host:host,port:n,user:user,pass:pass}};
+}
+function proxyUrl(p){return p.scheme+'://'+(p.user?encodeURIComponent(p.user)+(p.pass?':'+encodeURIComponent(p.pass):'')+'@':'')+p.host+':'+p.port}
+
+function render(){
+  var q=$('q').value.trim().toLowerCase();
+  var list=accounts.filter(function(a){return !q||a.login.toLowerCase().indexOf(q)>-1||(a.steamId||'').indexOf(q)>-1});
+  $('sTotal').textContent=accounts.length;
+  $('sNav').textContent=accounts.length;
+  $('sProxy').textContent=accounts.filter(function(a){return a.proxy}).length;
+  $('sMa').textContent=accounts.filter(function(a){return a.ma}).length;
+  var g=$('grid');
+  if(!list.length){g.innerHTML='<div class="empty">'+(accounts.length?'Ничего не найдено':'Аккаунтов пока нет. Нажмите «Добавить аккаунт».')+'</div>';return}
+  g.innerHTML=list.map(function(a){
+    var px=a.proxy?esc(a.proxy.host+':'+a.proxy.port):'—';
+    return '<div class="card" data-id="'+esc(a.id)+'"><div class="banner"></div><span class="dot'+(a.info?' on':'')+'"></span>'+
+    '<div class="av">'+avHtml(a)+'</div><div class="body">'+
+    '<div class="name">'+esc(a.login)+'</div><div class="sid">'+esc(a.steamId||'')+'</div>'+
+    '<div class="tags"><span class="tag '+(a.ma?'ok':'no')+'">'+(a.ma?'maFile':'нет maFile')+'</span>'+
+    '<span class="tag '+(a.proxy?'ok':'')+'">'+(a.proxy?'Proxy '+esc(a.proxy.scheme):'без прокси')+'</span></div>'+
+    '<div class="info"><div><div class="lbl">Статус</div><div class="val">'+esc(a.info?a.info.status:'Не проверен')+'</div></div>'+
+    '<div><div class="lbl">Прокси</div><div class="val" title="'+px+'">'+px+'</div></div></div>'+
+    '<button class="del" data-id="'+esc(a.id)+'">Удалить</button></div></div>';
+  }).join('');
+}
+
+/* add modal */
+function openModal(){
+  maText=null;maInfo=null;
+  ['fLogin','fPass','fProxy'].forEach(function(i){$(i).value=''});
+  $('maName').textContent='не выбран';$('maName').className='';$('fFile').value='';$('err').textContent='';
+  $('modal').classList.add('show');$('fLogin').focus();
+}
+function closeModal(){$('modal').classList.remove('show')}
+$('add').onclick=openModal;
+$('cancel').onclick=closeModal;
+$('modal').addEventListener('click',function(e){if(e.target===$('modal'))closeModal()});
+$('pick').onclick=function(){$('fFile').click()};
+$('q').oninput=render;
+$('fFile').onchange=function(){
+  var f=this.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var j=JSON.parse(r.result);
+      if(!j.shared_secret)throw new Error('нет shared_secret');
+      maText=r.result;
+      var sid=(j.Session&&j.Session.SteamID)||j.steamid||'';
+      maInfo={name:j.account_name||'',steamId:String(sid)};
+      $('maName').textContent=f.name+' ✓';$('maName').className='ok';$('err').textContent='';
+      if(!$('fLogin').value&&maInfo.name)$('fLogin').value=maInfo.name;
+    }catch(e){
+      maText=null;maInfo=null;$('maName').textContent='не выбран';$('maName').className='';
+      $('err').textContent='Файл не похож на maFile: '+e.message;
+    }
+  };
+  r.readAsText(f);
+};
+$('save').onclick=function(){
+  var login=$('fLogin').value.trim(),pass=$('fPass').value,err=$('err');
+  if(!login){err.textContent='Укажите логин';return}
+  if(!pass){err.textContent='Укажите пароль';return}
+  if(accounts.some(function(a){return a.login.toLowerCase()===login.toLowerCase()})){err.textContent='Такой аккаунт уже добавлен';return}
+  var px=parseProxy($('fProxy').value);
+  if(!px.ok){err.textContent='Неверный формат прокси';return}
+  accounts.push({id:String(Date.now())+Math.random().toString(16).slice(2,6),login:login,password:pass,
+    steamId:maInfo?maInfo.steamId:'',ma:maText,proxy:px.value});
+  persist();render();closeModal();toast('Аккаунт добавлен');
+};
+
+/* steam guard */
+function b64(s){var bin=atob(s),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
+async function genCode(secret,step){
+  var key=await crypto.subtle.importKey('raw',b64(secret),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+  var buf=new ArrayBuffer(8),dv=new DataView(buf);
+  dv.setUint32(0,Math.floor(step/4294967296));dv.setUint32(4,step>>>0);
+  var h=new Uint8Array(await crypto.subtle.sign('HMAC',key,buf));
+  var o=h[19]&15,n=(((h[o]&127)<<24)|(h[o+1]<<16)|(h[o+2]<<8)|h[o+3])>>>0,c='';
+  for(var i=0;i<5;i++){c+=ALPHA[n%26];n=Math.floor(n/26)}
+  return c;
+}
+async function tick(){
+  if(!cur)return;
+  var now=Math.floor(Date.now()/1000),step=Math.floor(now/30),left=30-(now%30);
+  $('aBar').style.width=(left/30*100)+'%';
+  $('aLeft').textContent='Код обновится через '+left+' с';
+  if(step!==lastStep&&cur.secret){
+    lastStep=step;
+    var c;try{c=await genCode(cur.secret,step)}catch(e){c='ошибка'}
+    if(cur)$('aCode').textContent=c;
+  }
+}
+function copyText(t,msg){
+  function fb(){
+    var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast(msg)}catch(e){toast('Не удалось скопировать')}
+    document.body.removeChild(ta);
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast(msg)},fb)}else fb();
+}
+
+/* detail view */
+var TILES=[['⬡','Инвентарь','Просмотр предметов'],['⇄','Отправить трейд','Передача предметов'],['🛒','Купить на маркете','Покупка по ссылке'],
+['⇅','Входящие трейды','Принять предложения'],['🖼','Редактировать профиль','Аватар и ник'],['⟳','Обновить данные','Обновить инфо']];
+$('tiles').innerHTML=TILES.map(function(t){return '<div class="tile"><em>скоро</em><span class="ti">'+t[0]+'</span><b>'+t[1]+'</b><small>'+t[2]+'</small></div>'}).join('');
+function showPass(){$('aPass').textContent=passShown?cur.password:'••••••••••••';$('aShow').textContent=passShown?'Скрыть':'Показать'}
+function avHtml(a){var ch=esc(a.login.charAt(0).toUpperCase());return ch+(a.info&&a.info.avatar?'<img src="'+esc(a.info.avatar)+'" alt="" onerror="this.remove()">':'')}
+function showInfo(a){
+  var i=a.info||null,nm=(i&&i.name)||a.login;
+  $('hAv').innerHTML=avHtml(a);$('hName').textContent=nm;$('hLogin').textContent=a.login;
+  $('pAv').innerHTML=avHtml(a)+'<span class="st'+(i?' on':'')+'"></span>';
+  $('pName').textContent=nm;$('pLogin').textContent=a.steamId||a.login;
+  var s=$('stStatus');s.textContent=i?i.status:'—';s.className='big'+(i?' ok':'');
+  $('stLevel').textContent=i&&i.level!=null?i.level:'—';
+  var w=$('stWallet');w.textContent=i&&i.wallet?i.wallet:'—';w.className='big'+(i&&i.wallet?' ok':'');
+  var se=$('sess');
+  if(i){se.textContent='Сессия готова · обновлено '+new Date(i.updated).toLocaleString('ru-RU');se.className='sess ok'}
+  else{se.textContent='Сессия не создана';se.className='sess'}
+}
+async function refresh(){
+  if(!cur)return;
+  var id=cur.id,a=accounts.filter(function(x){return x.id===id})[0];if(!a)return;
+  var b=$('rf');b.disabled=true;b.textContent='⟳ Обновление…';
+  try{
+    var r;
+    try{r=await fetch('/api/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:a.login,password:a.password,sharedSecret:cur.secret,proxy:a.proxy?proxyUrl(a.proxy):null})})}
+    catch(e){throw new Error('Нет связи с сервером. Запустите server.js и откройте страницу с него')}
+    var j={};try{j=await r.json()}catch(e){}
+    if(!r.ok||j.error)throw new Error(j.error||'Ошибка сервера ('+r.status+')');
+    a.info={status:j.status,level:j.level,wallet:j.wallet,avatar:j.avatar,name:j.name,updated:Date.now()};
+    if(j.steamId)a.steamId=j.steamId;
+    persist();render();if(cur&&cur.id===id)showInfo(a);toast('Данные обновлены');
+  }catch(e){
+    if(cur&&cur.id===id){var se=$('sess');se.textContent=e.message;se.className='sess bad'}
+    toast(e.message);
+  }
+  b.disabled=false;b.textContent='⟳ Обновить';
+}
+function resetDel(){if(delT){clearTimeout(delT);delT=null}$('dDel').textContent='Удалить аккаунт'}
+function openAcc(id){
+  var a=accounts.filter(function(x){return x.id===id})[0];if(!a)return;
+  var secret=null;
+  if(a.ma){try{secret=JSON.parse(a.ma).shared_secret||null}catch(e){}}
+  cur={id:a.id,login:a.login,password:a.password,secret:secret,proxy:a.proxy};
+  lastStep=-1;passShown=false;resetDel();
+  var ch=a.login.charAt(0).toUpperCase();
+  showInfo(a);
+  $('pTags').innerHTML='<span class="tag '+(a.ma?'ok':'no')+'">'+(a.ma?'maFile':'нет maFile')+'</span><span class="tag '+(a.proxy?'ok':'')+'">'+(a.proxy?'Proxy '+esc(a.proxy.scheme):'без прокси')+'</span>';
+  $('aLogin').textContent=a.login;showPass();
+  $('aProxy').textContent=a.proxy?a.proxy.host+':'+a.proxy.port:'Не задан';
+  $('aCopyProxy').style.display=a.proxy?'':'none';
+  $('aCode').textContent=secret?'—':'нет maFile';
+  $('aLeft').textContent=secret?'':'Добавьте maFile, чтобы получать коды';
+  $('aBar').style.width=secret?'100%':'0%';
+  $('aCopyCode').style.display=secret?'':'none';
+  $('appList').hidden=true;$('appAcc').hidden=false;
+  if(timer)clearInterval(timer);
+  if(secret){tick();timer=setInterval(tick,1000)}
+}
+function closeAcc(){
+  if(timer){clearInterval(timer);timer=null}
+  resetDel();cur=null;$('appAcc').hidden=true;$('appList').hidden=false;
+}
+$('back').onclick=closeAcc;
+$('rf').onclick=refresh;
+$('aShow').onclick=function(){if(!cur)return;passShown=!passShown;showPass()};
+$('aCopyLogin').onclick=function(){if(cur)copyText(cur.login,'Логин скопирован')};
+$('aCopyPass').onclick=function(){if(cur)copyText(cur.password,'Пароль скопирован')};
+$('aCopyProxy').onclick=function(){if(cur&&cur.proxy)copyText(proxyUrl(cur.proxy),'Прокси скопирован')};
+$('aCopyCode').onclick=function(){var c=$('aCode').textContent;if(cur&&cur.secret&&/^[A-Z0-9]{5}$/.test(c))copyText(c,'Код скопирован')};
+$('dDel').onclick=function(){
+  if(!cur)return;
+  if(!delT){this.textContent='Нажмите ещё раз';delT=setTimeout(resetDel,3000);return}
+  var id=cur.id;closeAcc();
+  accounts=accounts.filter(function(a){return a.id!==id});
+  persist();render();toast('Аккаунт удалён');
+};
+
+$('grid').onclick=function(e){
+  var b=e.target.closest('.del');
+  if(!b){var c=e.target.closest('.card');if(c)openAcc(c.getAttribute('data-id'));return}
+  var id=b.getAttribute('data-id');
+  accounts=accounts.filter(function(a){return a.id!==id});
+  persist();render();toast('Аккаунт удалён');
+};
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){if($('modal').classList.contains('show'))closeModal();else if(cur)closeAcc()}});
+accounts=load();render();
+})();
+</script>
+</body>
+</html>
