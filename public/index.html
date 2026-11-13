@@ -313,16 +313,32 @@ $('fFile').onchange=function(){
   };
   r.readAsText(f);
 };
-$('save').onclick=function(){
+$('save').onclick=async function(){
   var login=$('fLogin').value.trim(),pass=$('fPass').value,err=$('err');
   if(!login){err.textContent='Укажите логин';return}
   if(!pass){err.textContent='Укажите пароль';return}
   if(accounts.some(function(a){return a.login.toLowerCase()===login.toLowerCase()})){err.textContent='Такой аккаунт уже добавлен';return}
   var px=parseProxy($('fProxy').value);
   if(!px.ok){err.textContent='Неверный формат прокси';return}
+  var secret=null;if(maText){try{secret=JSON.parse(maText).shared_secret||null}catch(e){}}
+  err.textContent='';
+  var btn=this;btn.disabled=true;btn.textContent='Проверяем пароль…';
+  var info=null,sid=maInfo?maInfo.steamId:'';
+  try{
+    var r=await fetch('/api/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:login,password:pass,sharedSecret:secret,proxy:px.value?proxyUrl(px.value):null})});
+    var j={};try{j=await r.json()}catch(e){}
+    if(!r.ok||j.error){
+      btn.disabled=false;btn.textContent='Сохранить';
+      err.textContent=j.error||('Ошибка проверки ('+r.status+')');
+      return;
+    }
+    info={status:j.status,level:j.level,wallet:j.wallet,avatar:j.avatar,name:j.name,updated:Date.now()};
+    if(j.steamId)sid=j.steamId;
+  }catch(e){ /* нет связи с сервером — сохраняем без проверки */ }
   accounts.push({id:String(Date.now())+Math.random().toString(16).slice(2,6),login:login,password:pass,
-    steamId:maInfo?maInfo.steamId:'',ma:maText,proxy:px.value});
-  persist();render();closeModal();toast('Аккаунт добавлен');
+    steamId:sid,ma:maText,proxy:px.value,info:info});
+  persist();render();closeModal();toast(info?'Аккаунт добавлен и проверен':'Аккаунт добавлен');
+  btn.disabled=false;btn.textContent='Сохранить';
 };
 
 /* steam guard */
